@@ -1,4 +1,4 @@
-package com.exmaple.moviles.populaters;
+package com.example.moviles.populaters;
 
 import com.example.moviles.models.Movil;
 import com.example.moviles.repositories.MovilRepository;
