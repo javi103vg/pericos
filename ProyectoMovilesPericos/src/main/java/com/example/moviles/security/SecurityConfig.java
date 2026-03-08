@@ -1,7 +1,5 @@
 package com.example.moviles.security;
 
-import com.example.moviles.configuration.security.jwt.filters.JwtAuthenticationFilter;
-import com.example.moviles.repositories.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,12 +13,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.example.moviles.configuration.security.jwt.filters.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -28,8 +26,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    // ✅ Inyectamos la implementación concreta, NO la interfaz
+    // Esto rompe la dependencia circular con JwtAuthenticationFilter
+    private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final UsuarioRepository usuarioRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -41,11 +41,11 @@ public class SecurityConfig {
                         // Login: público
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
-                        // Tendencia, marcas, detalle, búsqueda y comparativa: públicos (GUEST sin login)
+                        // Endpoints públicos para GUEST (sin login)
                         .requestMatchers(HttpMethod.GET,  "/api/v1/moviles/tendencia").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/v1/moviles/marcas").permitAll()
-                        .requestMatchers(HttpMethod.GET,  "/api/v1/moviles/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/v1/moviles/comparar").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/moviles/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/moviles/buscar").permitAll()
 
                         // CRUD de móviles: solo ADMIN
@@ -53,7 +53,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/moviles/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/moviles/**").hasRole("ADMIN")
 
-                        // Cualquier otra petición requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -62,15 +61,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> usuarioRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
-    }
-
-    @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService());
+        provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
