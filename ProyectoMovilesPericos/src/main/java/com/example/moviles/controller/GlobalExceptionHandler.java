@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -20,6 +21,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // Cuando se pasa un valor no numérico donde se espera un Long (ej: /{id})
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String mensaje = String.format("El parámetro '%s' debe ser de tipo numérico", ex.getName());
+        return buildError(HttpStatus.BAD_REQUEST, mensaje);
     }
 
     private ResponseEntity<Map<String, Object>> buildError(HttpStatus status, String message) {

@@ -21,18 +21,15 @@ public class AuthService {
     public LoginResponseDTO login(LoginRequestDTO request) {
         // Lanza excepción automáticamente si las credenciales son incorrectas
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
 
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String token = jwtService.generateToken(usuario);
 
-        return LoginResponseDTO.builder()
-                .token(token)
-                .email(usuario.getEmail())
-                .rol(usuario.getRol().name())
-                .build();
+        // Los records no tienen builder, se instancian directamente con el constructor
+        return new LoginResponseDTO(token, usuario.getEmail(), usuario.getRol().name());
     }
 }

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,95 +22,94 @@ public class MovilServiceImpl implements MovilService {
     private final MovilRepository movilRepository;
     private final MovilMapper movilMapper;
 
-    // -------------------------------------------------------
-    // Página inicio: Top 5 tendencia
-    // -------------------------------------------------------
+    // ── Tendencia ────────────────────────────────────────────────────
     @Override
     public List<MovilResumenDTO> getTendencia() {
         return movilRepository.findTop5ByNumConsultas()
                 .stream()
                 .map(movilMapper::toResumen)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
     }
 
-    // -------------------------------------------------------
-    // Detalle de un móvil (incrementa contador de consultas)
-    // -------------------------------------------------------
+    // ── Detalle (incrementa contador) ────────────────────────────────
     @Override
     @Transactional
-    public MovilDetalleDTO getDetalle(Long id) {
-        Movil movil = movilRepository.findById(id)
+    public Optional<MovilDetalleDTO> getDetalle(Long id) {
+        return movilRepository.findById(id)
+                .map(movil -> {
+                    movilRepository.incrementarConsultas(id);
+                    return movilMapper.toDetalle(movil);
+                })
                 .orElseThrow(() -> new EntityNotFoundException("Móvil no encontrado con id: " + id));
-        movilRepository.incrementarConsultas(id);
-        return movilMapper.toDetalle(movil);
     }
 
-    // -------------------------------------------------------
-    // Marcas disponibles
-    // -------------------------------------------------------
+    // ── Marcas disponibles ───────────────────────────────────────────
     @Override
     public List<String> getMarcasDisponibles() {
         return movilRepository.findMarcasDistintas();
     }
 
-    // -------------------------------------------------------
-    // Búsqueda con filtros (precio obligatorio)
-    // -------------------------------------------------------
+    // ── Búsqueda con filtros ─────────────────────────────────────────
     @Override
     public List<MovilResumenDTO> buscarConFiltros(MovilFiltroDTO filtro) {
         validarFiltroPrecio(filtro);
         return movilRepository.findAll(MovilSpecification.conFiltros(filtro))
                 .stream()
                 .map(movilMapper::toResumen)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
     }
 
-    // -------------------------------------------------------
-    // Comparativa de dos móviles
-    // -------------------------------------------------------
+    // ── Comparativa ──────────────────────────────────────────────────
     @Override
     public List<MovilDetalleDTO> compararMoviles(Long idMovil1, Long idMovil2) {
         List<Movil> moviles = movilRepository.findAllByIdIn(List.of(idMovil1, idMovil2));
         if (moviles.size() != 2) {
             throw new EntityNotFoundException("Uno o ambos móviles no encontrados.");
         }
-        return moviles.stream().map(movilMapper::toDetalle).toList();
+        return moviles.stream()
+                .map(movilMapper::toDetalle)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
     }
 
-    // -------------------------------------------------------
-    // CRUD ADMIN
-    // -------------------------------------------------------
+    // ── CRUD ADMIN ───────────────────────────────────────────────────
     @Override
     @Transactional
     public MovilDetalleDTO crear(MovilDetalleDTO dto) {
         Movil movil = movilMapper.toEntity(dto);
-        return movilMapper.toDetalle(movilRepository.save(movil));
+        return movilMapper.toDetalle(movilRepository.save(movil))
+                .orElseThrow(() -> new RuntimeException("Error al crear el móvil"));
     }
 
     @Override
     @Transactional
-    public MovilDetalleDTO actualizar(Long id, MovilDetalleDTO dto) {
+    public Optional<MovilDetalleDTO> actualizar(Long id, MovilDetalleDTO dto) {
         Movil existente = movilRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Móvil no encontrado con id: " + id));
 
-        existente.setMarca(dto.getMarca());
-        existente.setModelo(dto.getModelo());
-        existente.setProcesadorTipo(dto.getProcesadorTipo());
-        existente.setProcesadorNucleos(dto.getProcesadorNucleos());
-        existente.setProcesadorVelocidadGhz(dto.getProcesadorVelocidadGhz());
-        existente.setAlmacenamientoGb(dto.getAlmacenamientoGb());
-        existente.setPantallaPulgadas(dto.getPantallaPulgadas());
-        existente.setPantallaTecnologia(dto.getPantallaTecnologia());
-        existente.setRamGb(dto.getRamGb());
-        existente.setDimensionAltoCm(dto.getDimensionAltoCm());
-        existente.setDimensionAnchoCm(dto.getDimensionAnchoCm());
-        existente.setDimensionGrosorCm(dto.getDimensionGrosorCm());
-        existente.setPesoGr(dto.getPesoGr());
-        existente.setCamaraMp(dto.getCamaraMp());
-        existente.setBateriaMah(dto.getBateriaMah());
-        existente.setNfc(dto.getNfc());
-        existente.setPrecioActual(dto.getPrecioActual());
-        existente.setFechaLanzamiento(dto.getFechaLanzamiento());
+        existente.setMarca(dto.marca());
+        existente.setModelo(dto.modelo());
+        existente.setProcesadorTipo(dto.procesadorTipo());
+        existente.setProcesadorNucleos(dto.procesadorNucleos());
+        existente.setProcesadorVelocidadGhz(dto.procesadorVelocidadGhz());
+        existente.setAlmacenamientoGb(dto.almacenamientoGb());
+        existente.setPantallaPulgadas(dto.pantallaPulgadas());
+        existente.setPantallaTecnologia(dto.pantallaTecnologia());
+        existente.setRamGb(dto.ramGb());
+        existente.setDimensionAltoCm(dto.dimensionAltoCm());
+        existente.setDimensionAnchoCm(dto.dimensionAnchoCm());
+        existente.setDimensionGrosorCm(dto.dimensionGrosorCm());
+        existente.setPesoGr(dto.pesoGr());
+        existente.setCamaraMp(dto.camaraMp());
+        existente.setBateriaMah(dto.bateriaMah());
+        existente.setNfc(dto.nfc());
+        existente.setPrecioActual(dto.precioActual());
+        existente.setFechaLanzamiento(dto.fechaLanzamiento());
 
         return movilMapper.toDetalle(movilRepository.save(existente));
     }
@@ -123,14 +123,12 @@ public class MovilServiceImpl implements MovilService {
         movilRepository.deleteById(id);
     }
 
-    // -------------------------------------------------------
-    // Validación interna
-    // -------------------------------------------------------
+    // ── Validación interna ───────────────────────────────────────────
     private void validarFiltroPrecio(MovilFiltroDTO filtro) {
-        if (filtro.getPrecioMin() == null || filtro.getPrecioMax() == null) {
+        if (filtro.precioMin() == null || filtro.precioMax() == null) {
             throw new IllegalArgumentException("El criterio de precio (min y max) es obligatorio en toda búsqueda.");
         }
-        if (filtro.getPrecioMin() > filtro.getPrecioMax()) {
+        if (filtro.precioMin() > filtro.precioMax()) {
             throw new IllegalArgumentException("El precio mínimo no puede ser mayor que el precio máximo.");
         }
     }

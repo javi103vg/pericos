@@ -35,8 +35,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(h -> h.frameOptions(f -> f.disable()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
+                        // Consola H2 (solo desarrollo)
+                        .requestMatchers("/h2-console/**").permitAll()
 
                         // Login: público
                         .requestMatchers("/api/v1/auth/**").permitAll()
