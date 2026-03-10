@@ -15,39 +15,39 @@ public class MovilSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             // Precio: OBLIGATORIO
-            if (filtro.getPrecioMin() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("precioActual"), filtro.getPrecioMin()));
+            if (filtro.precioMin() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("precioActual"), filtro.precioMin()));
             }
-            if (filtro.getPrecioMax() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("precioActual"), filtro.getPrecioMax()));
+            if (filtro.precioMax() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("precioActual"), filtro.precioMax()));
             }
 
             // Marca (opcional)
-            if (filtro.getMarca() != null && !filtro.getMarca().isBlank()) {
+            if (filtro.marca() != null && !filtro.marca().isBlank()) {
                 predicates.add(cb.equal(
                         cb.lower(root.get("marca")),
-                        filtro.getMarca().toLowerCase()
+                        filtro.marca().toLowerCase()
                 ));
             }
 
             // RAM min/max (opcionales)
-            if (filtro.getRamMin() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("ramGb"), filtro.getRamMin()));
+            if (filtro.ramMin() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("ramGb"), filtro.ramMin()));
             }
-            if (filtro.getRamMax() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("ramGb"), filtro.getRamMax()));
+            if (filtro.ramMax() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("ramGb"), filtro.ramMax()));
             }
 
             // NFC (opcional)
-            if (filtro.getNfc() != null) {
-                predicates.add(cb.equal(root.get("nfc"), filtro.getNfc()));
+            if (filtro.nfc() != null) {
+                predicates.add(cb.equal(root.get("nfc"), filtro.nfc()));
             }
 
             // Tecnología de pantalla (opcional)
-            if (filtro.getPantallaTecnologia() != null && !filtro.getPantallaTecnologia().isBlank()) {
+            if (filtro.pantallaTecnologia() != null && !filtro.pantallaTecnologia().isBlank()) {
                 predicates.add(cb.equal(
                         cb.lower(root.get("pantallaTecnologia")),
-                        filtro.getPantallaTecnologia().toLowerCase()
+                        filtro.pantallaTecnologia().toLowerCase()
                 ));
             }
 
